@@ -1,46 +1,25 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="hu">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TapolcaInfo — Hamarosan</title>
-  <meta name="description" content="TapolcaInfo — Minden Tapolca egy helyen. Hamarosan indulunk!">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TapolcaInfo - Hamarosan</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="wrap">
-    <header class="header">
-      <div class="brand">Tapolca<span>Kovacs</span></div>
-      <nav class="nav">
-        <a href="#" aria-disabled="true">Események</a>
-        <a href="#" aria-disabled="true">Hírek</a>
-        <a href="#" aria-disabled="true">Vállalkozások</a>
-        <a href="#" aria-disabled="true">Apró</a>
-      </nav>
-    </header>
-
-    <section class="hero" role="banner">
-      <h1>Minden Tapolca <span>egy helyen</span></h1>
-      <p>Hamarosan indulunk. Add meg az e-mailed, és szólunk az indulásról!</p>
-      <form class="cta" onsubmit="event.preventDefault(); document.querySelector('.ok').style.display='block'">
-        <input type="email" placeholder="email@pelda.hu" required aria-label="Email címed">
-        <button type="submit">Értesítést kérek</button>
+  <div class="overlay">
+    <div class="content">
+      <h1 class="title">
+        TAPOLCAINFO
+        <span class="strike">Soon</span>
+      </h1>
+      <p class="subtitle">Valami új és egyedi érkezik Tapolcán...</p>
+      
+      <form class="notify-form">
+        <input type="email" placeholder="Írd be az emailed, hogy elsőként értesülj!" required>
+        <button type="submit">Értesíts</button>
       </form>
-      <div class="ok" style="display:none">Köszi! Felírtunk. 💙</div>
-    </section>
-
-    <section class="features">
-      <div class="card"><h3>Programok</h3><p>Koncertek, piac, fesztiválok — egy helyen.</p></div>
-      <div class="card"><h3>Hírek</h3><p>Helyi hírek röviden, lényegre törően.</p></div>
-      <div class="card"><h3>Vállalkozások</h3><p>Támogasd a helyit — éttermek, boltok, szolgáltatók.</p></div>
-    </section>
-
-    <footer class="footer">
-      <small>© 2025 TapolcaInfo — Impresszum • Adatkezelés • Sütik</small>
-    </footer>
-  </main>
+    </div>
+  </div>
 </body>
 </html>
