@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TapolcaInfo — Hamarosan</title>
+  <meta name="description" content="TapolcaInfo — Minden Tapolca egy helyen. Hamarosan indulunk!">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=Manrope:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#" aria-label="TapolcaInfo főoldal">
+        <span class="logo-dot"></span>
+        <span class="brand-text">Tapolca<span>Info</span></span>
+      </a>
+      <nav class="nav">
+        <a href="#features">Funkciók</a>
+        <a href="#subscribe">Értesítés</a>
+        <button class="mode-toggle" aria-label="Téma váltása" onclick="toggleMode()">🌙</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="bg-shape one"></div>
+      <div class="bg-shape two"></div>
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <h1>Minden Tapolca <span>egy helyen</span></h1>
+          <p class="lead">Események, hírek, vállalkozások, apróhirdetések – tiszta, gyors és közösségi élmény. <strong>Hamarosan indulunk.</strong></p>
+          <div class="countdown" aria-live="polite">
+            <div class="cd-item"><span id="d">--</span><label>nap</label></div>
+            <div class="cd-item"><span id="h">--</span><label>óra</label></div>
+            <div class="cd-item"><span id="m">--</span><label>perc</label></div>
+            <div class="cd-item"><span id="s">--</span><label>mp</label></div>
+          </div>
+          <div class="cta-group" id="subscribe">
+            <form class="cta" onsubmit="event.preventDefault(); ok()">
+              <input id="email" type="email" placeholder="email@pelda.hu" required aria-label="Email címed">
+              <button type="submit">Értesítést kérek</button>
+            </form>
+            <p class="ok" role="status" aria-live="polite" hidden>Köszi! Hamarosan jelentkezünk. 💙</p>
+          </div>
+        </div>
+        <div class="hero-visual" role="img" aria-label="Tapolca illusztráció">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-emoji">🎵</div>
+              <div class="card-title">Koncertek</div>
+              <div class="card-meta">Események egy helyen</div>
+            </div>
+            <div class="card">
+              <div class="card-emoji">📰</div>
+              <div class="card-title">Helyi hírek</div>
+              <div class="card-meta">Röviden, lényegre törően</div>
+            </div>
+            <div class="card">
+              <div class="card-emoji">🏪</div>
+              <div class="card-title">Vállalkozások</div>
+              <div class="card-meta">Támogasd a helyit</div>
+            </div>
+            <div class="card">
+              <div class="card-emoji">📷</div>
+              <div class="card-title">Galéria</div>
+              <div class="card-meta">Közösségi fotók</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="features">
+      <div class="container">
+        <h2>Mit hoz az induláskor?</h2>
+        <div class="features-grid">
+          <article class="feature">
+            <div class="f-icon">🔍</div>
+            <h3>Okos kereső</h3>
+            <p>Keresés programok, helyek és cikkek között, szűrőkkel.</p>
+          </article>
+          <article class="feature">
+            <div class="f-icon">💬</div>
+            <h3>Közösségi kommentek</h3>
+            <p>Vélemények, értékelések, moderációval.</p>
+          </article>
+          <article class="feature">
+            <div class="f-icon">🤖</div>
+            <h3>AI Tapolca chat</h3>
+            <p>Kérdezd meg: „Hol a legjobb fagyizó?” „Mikor a piac?”</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container foot-inner">
+      <small>© 2025 TapolcaInfo • Impresszum • Adatkezelés • Sütik</small>
+    </div>
+  </footer>
+
+  <script src="/script.js"></script>
+</body>
+</html>
