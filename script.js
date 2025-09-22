@@ -13,14 +13,14 @@ function resize() {
 addEventListener('resize', resize, { passive: true });
 resize();
 
-// Particle system
+// --- Szívek particle system ---
 const hearts = [];
 const TAU = Math.PI * 2;
 
 function spawnHeart(x, y, opts = {}) {
-  const size = opts.size ?? (Math.random() * 12 + 10); // px (pre-dpr)
+  const size = opts.size ?? (Math.random() * 12 + 10); // px
   const s = size * dpr;
-  const angle = (Math.random() * Math.PI / 2) - Math.PI / 4; // -45..45deg
+  const angle = (Math.random() * Math.PI / 2) - Math.PI / 4;
   const speed = (opts.speed ?? (Math.random() * 0.7 + 0.6)) * dpr;
   hearts.push({
     x: x * dpr,
@@ -36,11 +36,9 @@ function spawnHeart(x, y, opts = {}) {
   });
 }
 
-// Draw a heart path centered at 0,0 with given size
 function heartPath(size) {
   const s = size;
   ctx.beginPath();
-  // Parametric heart using two arcs and a triangle-ish bottom
   const top = -0.25 * s;
   ctx.moveTo(0, top);
   ctx.bezierCurveTo(0, -0.7 * s, -0.55 * s, -0.7 * s, -0.62 * s, -0.25 * s);
@@ -64,13 +62,48 @@ function drawHeart(h) {
   ctx.restore();
 }
 
+// --- Szöveg partikulák (whispers) ---
+const whispers = [];
+const loveTexts = [
+  "Csak te 💕", "Mindig veled", "Örökké",
+  "Szerelmem", "Nagyon komolyan", "Te vagy az álmom",
+  "Minden percben", "Az én szívem", "Veled minden jobb"
+];
+
+function spawnWhisper() {
+  const txt = loveTexts[Math.floor(Math.random()*loveTexts.length)];
+  whispers.push({
+    text: txt,
+    x: Math.random() * W,
+    y: H + 30,
+    vy: -(Math.random()*0.3 + 0.15) * dpr,
+    life: 1,
+    decay: 0.0008 + Math.random()*0.0005,
+    size: (Math.random()*18 + 14) * dpr,
+    rot: (Math.random()-0.5)*0.2
+  });
+}
+
+function drawWhisper(w) {
+  ctx.save();
+  ctx.translate(w.x, w.y);
+  ctx.rotate(w.rot);
+  ctx.globalAlpha = Math.max(w.life*0.4,0); // halvány
+  ctx.fillStyle = "#ffffffcc";
+  ctx.font = `${w.size}px 'Playfair Display', serif`;
+  ctx.textAlign = "center";
+  ctx.fillText(w.text, 0, 0);
+  ctx.restore();
+}
+
+// --- Loop ---
 let last = 0;
 function loop(t=0){
   const dt = Math.min((t - last) / 16.666, 2);
   last = t;
   ctx.clearRect(0, 0, W, H);
 
-  // idle drift spawn
+  // idle drift spawn hearts
   if (hearts.length < 60 && Math.random() < 0.3) {
     spawnHeart(Math.random() * innerWidth, innerHeight - 10, { size: Math.random()*8 + 8, speed: 0.5 });
   }
@@ -88,11 +121,24 @@ function loop(t=0){
       hearts.splice(i, 1);
     }
   }
+
+  // whispers spawn
+  if (whispers.length < 15 && Math.random() < 0.015) {
+    spawnWhisper();
+  }
+  for (let i = whispers.length - 1; i >= 0; i--) {
+    const w = whispers[i];
+    w.y += w.vy * dt*60;
+    w.life -= w.decay * dt*60;
+    drawWhisper(w);
+    if (w.life <= 0 || w.y < -40) whispers.splice(i,1);
+  }
+
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 
-// Interakciók
+// --- Interakciók ---
 function vibe(ms=10){ if (navigator.vibrate) try{ navigator.vibrate(ms); }catch{} }
 function burst(x, y, n=14){
   for (let i=0;i<n;i++){
@@ -114,7 +160,7 @@ addEventListener('pointerdown', (e)=>{
   burst(e.clientX, e.clientY, 16);
 }, { passive: true });
 
-// Kis üzenet (modal)
+// Modal
 const dialog = document.getElementById('loveNote');
 const noteBtn = document.getElementById('noteBtn');
 noteBtn.addEventListener('click', ()=> dialog.showModal());
@@ -153,12 +199,11 @@ function typeLoop(){
 }
 typeLoop();
 
-// Finom parallax telefonon
+// Parallax telefonon
 if (window.DeviceOrientationEvent){
   window.addEventListener('deviceorientation', (e)=>{
-    const tiltX = (e.gamma || 0) / 45; // -1..1
+    const tiltX = (e.gamma || 0) / 45;
     const tiltY = (e.beta  || 0) / 45;
-    // enyhe lebegés: szívek általános sodrása
     for (const h of hearts){
       h.vx += tiltX * 0.005;
       h.vy -= tiltY * 0.002;
