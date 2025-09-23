@@ -1,64 +1,46 @@
 <!doctype html>
-<html lang="hu">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Szeretlek – Nagyon Komolyan</title>
-    <meta name="theme-color" content="#0f0b10" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <!-- Háttér canvas a lebegő szívekhez -->
-    <canvas id="hearts" aria-hidden="true"></canvas>
+<meta charset="utf-8"/>
+<title>Borostyán-tó hajókövetés</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  html,body,#map{height:100%;margin:0}
+  .info{position:absolute;left:10px;top:10px;z-index:1000;background:#fff;padding:8px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+</style>
+<div id="map"></div>
+<div class="info" id="info">Csatlakozás...</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const map = L.map('map').setView([46.7, 16.6], 14); // kezdő nézet, állítsd át Borostyán-tóra
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 
-    <main class="wrap">
-      <header class="top">
-        <div class="badge" aria-hidden="true">💞</div>
-      </header>
+  // jelölő és vonal
+  let marker = null;
+  let path = L.polyline([], {color:'blue'}).addTo(map);
 
-      <section class="hero" role="banner" aria-label="Szerelmes üzenet">
-        <h1 class="headline">
-          <span class="line">Szeretlek.</span>
-          <span class="line accent">Nagyon.</span>
-          <span class="line">Komolyan.</span>
-        </h1>
+  const info = document.getElementById('info');
 
-        <p class="sub">minden szívveréssel egy kicsit jobban.</p>
+  // WebSocket: várja a GPS adatot ws://localhost:8765
+  const ws = new WebSocket('ws://localhost:8765/');
+  ws.onopen = ()=> info.textContent = 'Kapcsolódva a helyadat forráshoz';
+  ws.onclose = ()=> info.textContent = 'Kapcsolat bontva';
+  ws.onerror = (e)=> info.textContent = 'Hiba a WS kapcsolaton';
 
-        <div class="cta-row">
-          <button id="heartBtn" class="cta" aria-label="Koppints ide, ha te is szeretsz">
-            Koppints ide a szívekért
-            <span class="cta-emoji" aria-hidden="true">💖</span>
-          </button>
-          <button id="noteBtn" class="ghost" aria-haspopup="dialog" aria-controls="loveNote">
-            Kis üzenet
-          </button>
-        </div>
-      </section>
+  ws.onmessage = (ev) => {
+    try {
+      const obj = JSON.parse(ev.data);
+      if (!obj.lat || !obj.lon) return;
+      const lat = parseFloat(obj.lat), lon = parseFloat(obj.lon);
+      const latlng = [lat, lon];
+      if (!marker) {
+        marker = L.marker(latlng).addTo(map);
+        map.setView(latlng, 16);
+      } else {
+        marker.setLatLng(latlng);
+      }
+      path.addLatLng(latlng);
 
-      <footer class="foot">
-        <div class="ticker" aria-live="polite" aria-atomic="true">
-          <span id="typewriter"></span><span class="caret" aria-hidden="true">|</span>
-        </div>
-      </footer>
-    </main>
-
-    <!-- Romantikus levél (modal) -->
-    <dialog id="loveNote" class="modal" aria-label="Szerelmes üzenet">
-      <form method="dialog">
-        <h2>Szívből</h2>
-        <p>
-          Te vagy az első gondolat reggel és az utolsó este.
-          A jelenem mosolya és a jövőm nyugalma. Szeretlek – nagyon, komolyan.
-        </p>
-        <menu>
-          <button class="cta small">Érzem 💗</button>
-        </menu>
-      </form>
-    </dialog>
-
-    <script src="script.js" defer></script>
-  </body>
-</html>
+      // kis infó: távolság parttól (ha adtok part koordinátát), most csak mutatjuk lat/lon
+      info.innerHTML = `Pozíció: ${lat.toFixed(6)}, ${lon.toFixed(6)}<br>Idő: ${obj.time || new Date().toLocaleTimeString()}`;
+    } catch(e){ console.error(e) }
+  };
+</script>
