@@ -3,36 +3,133 @@
 <head>
   <meta charset="UTF-8">
   <title>Admin • Statisztika</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: system-ui; background: #f6f6f6; margin: 0; padding: 20px; }
-    h1 { text-align: center; }
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif; background: #f6f6f6; margin: 0; padding: 20px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0f1115; color: #e5e7eb; }
+      .card { background: #151922; color: #e5e7eb; box-shadow: none; border: 1px solid #222734; }
+      .bar { background: #222734; }
+      .error { background: #2a0f14; border-color: #7f1d1d; color: #fecaca; }
+      .top { background: #0b0e14; border-color: #222734; }
+      input, button { background: #151922; color: #e5e7eb; border: 1px solid #222734; }
+    }
+    h1 { text-align: center; margin-top: 0; }
+    .top { max-width: 900px; margin: 0 auto 16px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 12px; display: flex; align-items: center; gap: 10px; justify-content: space-between; background: #fff; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 16px; max-width: 900px; margin: 0 auto; }
-    .card { background: #fff; padding: 16px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,.1); }
-    .label { font-weight: bold; margin-bottom: 6px; }
-    .value { font-size: 1.2em; }
+    .card { background: #fff; padding: 16px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,.08); }
+    .label { font-weight: 600; margin-bottom: 6px; opacity: .8; }
+    .value { font-size: 1.1em; word-break: break-word; }
+    .muted { opacity: .7; font-size: .9em; }
+    .error { border: 1px solid #ef4444; background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 10px; max-width: 900px; margin: 0 auto 16px; }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
+    .btn { padding: 8px 12px; border-radius: 10px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; }
+    .btn:active { transform: translateY(1px); }
+    .bar { width: 100%; height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
+    .bar > div { height: 100%; width: 0%; background: #3b82f6; transition: width .4s ease; }
+    .kpi { display:flex; gap:12px; align-items:center; }
+    .dot { width:10px; height:10px; border-radius:50%; background:#10b981; }
+    .dot.red { background: #ef4444; }
+    .spacer { flex: 1; }
+    .mini { font-size: .85em; opacity:.8; }
   </style>
 </head>
 <body>
   <h1>Szerver statisztika</h1>
+
+  <div id="error" class="error" style="display:none"></div>
+
+  <div class="top">
+    <div class="row">
+      <div class="kpi">
+        <div id="health-dot" class="dot"></div>
+        <div id="health-text" class="mini">Health: ismeretlen…</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn" id="refreshBtn">Frissítés</button>
+      <label class="mini">
+        Auto-refresh
+        <input type="checkbox" id="auto" checked>
+      </label>
+      <div class="mini" id="updated">Utoljára frissítve: –</div>
+    </div>
+  </div>
+
   <div class="grid" id="cards"></div>
 
   <script>
-    async function load(){
-      const r = await fetch('/metrics'); // a szervered adja ezt az endpointot
-      const d = await r.json();
-      const fmt = b => (b/1024/1024/1024).toFixed(1)+' GB';
-      const cards = [
-        ['Host', d.hostname],
-        ['Uptime', (d.uptimeSeconds/3600).toFixed(1)+' h'],
-        ['CPU load', d.cpuLoad['1m']+' / '+d.cpuLoad['5m']+' / '+d.cpuLoad['15m']],
-        ['Memória', fmt(d.memory.used)+' / '+fmt(d.memory.total)],
-        ['Lemez', d.disk.usedPct]
-      ];
-      document.getElementById('cards').innerHTML = cards.map(([h,v]) =>
-        `<div class="card"><div class="label">${h}</div><div class="value">${v}</div></div>`
-      ).join('');
+    const fmtBytes = b => (b/1024/1024/1024).toFixed(1)+' GB';
+    const updatedEl = document.getElementById('updated');
+    const errorEl = document.getElementById('error');
+    const healthDot = document.getElementById('health-dot');
+    const healthText = document.getElementById('health-text');
+
+    function bar(percent){
+      const safe = Math.max(0, Math.min(100, percent));
+      return `<div class="bar"><div style="width:${safe}%"></div></div>
+              <div class="muted">${safe}%</div>`;
     }
-    load(); setInterval(load, 5000);
+
+    async function checkHealth(){
+      try{
+        const r = await fetch('/health', { cache: 'no-store' });
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const d = await r.json();
+        healthDot.classList.toggle('red', !d.ok);
+        healthText.textContent = d.ok ? 'Health: OK' : 'Health: HIBA';
+      } catch(e){
+        healthDot.classList.add('red');
+        healthText.textContent = 'Health: NEM ELÉRHETŐ';
+      }
+    }
+
+    async function load(){
+      errorEl.style.display = 'none';
+      try {
+        const r = await fetch('/metrics', { cache: 'no-store' });
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const d = await r.json();
+
+        const cpu = (d.cpuLoad?.['1m'] ?? 0) * 100 / (d.cpus || 1); // ha küldöd a CPU-k számát
+        const memPct = (d.memory?.used ?? 0) / (d.memory?.total || 1) * 100;
+        const diskPct = parseInt((d.disk?.usedPct || '').replace('%','')) || 0;
+
+        const cards = [
+          ['Host', `${d.hostname} • ${d.platform}/${d.arch}`],
+          ['Uptime', (d.uptimeSeconds/3600).toFixed(1)+' h'],
+          ['CPU terhelés (becsült %)', bar(Math.round(cpu))],
+          ['CPU load (1/5/15m)', `${d.cpuLoad['1m']} / ${d.cpuLoad['5m']} / ${d.cpuLoad['15m']}`],
+          ['Memória', `${fmtBytes(d.memory.used)} / ${fmtBytes(d.memory.total)} (${Math.round(memPct)}%)` + bar(Math.round(memPct))],
+          ['Lemez', `${d.disk.usedPct || '?'} (${d.disk.mount || '/'})` + bar(diskPct)],
+          ['Kérések száma', String(d.requestsServed)]
+        ];
+
+        document.getElementById('cards').innerHTML = cards.map(([h,v]) =>
+          `<div class="card">
+            <div class="label">${h}</div>
+            <div class="value">${v}</div>
+          </div>`
+        ).join('');
+
+        updatedEl.textContent = 'Utoljára frissítve: ' + new Date().toLocaleTimeString();
+      } catch (e) {
+        errorEl.textContent = 'Nem sikerült lekérni a /metrics adatokat: ' + e.message +
+                              ' — Ellenőrizd, hogy a backend fut-e és elérhető-e reverse proxy mögött.';
+        errorEl.style.display = 'block';
+      } finally {
+        checkHealth();
+      }
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', load);
+    let timer = setInterval(load, 5000);
+    document.getElementById('auto').addEventListener('change', (e)=>{
+      if(e.target.checked){ timer = setInterval(load, 5000); }
+      else { clearInterval(timer); }
+    });
+
+    load();
   </script>
 </body>
 </html>
