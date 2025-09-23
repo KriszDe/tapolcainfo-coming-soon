@@ -1,100 +1,107 @@
 <!doctype html>
 <html lang="hu">
 <head>
-  <meta charset="utf-8">
-  <title>Gyors GPS teszt</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <style>html,body,#map{height:100%;margin:0}</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Borostyán-tó – Ranglista & Sektorok</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <div id="map"></div>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    const map = L.map('map').setView([46.8443,16.6080],14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+<header class="container">
+  <h1>VIII. Borostyán-tavi Bojlis Találkozó – Ranglista</h1>
+  <p class="muted">Gyors felvitel • Sektoronkénti és összesített eredmények • Nyomtatás/Export</p>
+</header>
 
-    let marker=null,path=L.polyline([], {color:'blue'}).addTo(map);
-    function update(lat,lon,acc){
-      const ll=[lat,lon];
-      if(!marker){ marker=L.marker(ll).addTo(map); map.setView(ll,16);}
-      else marker.setLatLng(ll);
-      path.addLatLng(ll);
-    }
+<main class="container">
+  <section class="card">
+    <div class="section-head">
+      <h2>Csapatok & Helyek</h2>
+      <div class="row">
+        <button id="btnReset" class="btn btn-danger">Minden törlése</button>
+        <button id="btnExport" class="btn btn-ghost">Export CSV</button>
+        <button id="btnPrint" class="btn">Nyomtatás / PDF</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="teamsTable" class="table"></table>
+    </div>
+  </section>
 
-    if(navigator.geolocation){
-      navigator.geolocation.watchPosition(p=>{
-        update(p.coords.latitude, p.coords.longitude, p.coords.accuracy);
-      },err=>{
-        alert("Hiba: "+err.message);
-      },{enableHighAccuracy:true});
-    }else alert("Nincs GPS támogatás.");
-  </script>
-</body>
-</html>
+  <section class="card">
+    <div class="section-head">
+      <h2>Fogások / Összegzés bevitel</h2>
+      <div class="row">
+        <label>Szektor
+          <select id="sectorSelect">
+            <option value="I">I</option>
+            <option value="II">II</option>
+            <option value="III">III</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <form id="entryForm" class="grid">
+      <label>Horgászhely #
+        <input id="peg" type="number" min="1" max="99" required/>
+      </label>
+      <label>Csapat
+        <input id="team" list="teamList" placeholder="Kezdj el gépelni…" required/>
+        <datalist id="teamList"></datalist>
+      </label>
+      <label>Fogott halak száma (db)
+        <input id="count" type="number" min="0" step="1" value="0"/>
+      </label>
+      <label>Fogott halak összsúlya (kg)
+        <input id="totalKg" type="number" min="0" step="0.001" value="0"/>
+      </label>
+      <label>Legnagyobb hal (kg)
+        <input id="biggestKg" type="number" min="0" step="0.001" value="0"/>
+      </label>
+      <label>Öt legnagyobb hal összsúlya (kg) – opció
+        <input id="top5Kg" type="number" min="0" step="0.001" value="0"/>
+      </label>
+      <button class="btn" type="submit">Mentés / Frissítés</button>
+    </form>
+  </section>
 
-<!-- UI a távolság+irány alapú becsléshez -->
-<div style="position:absolute;left:8px;top:8px;background:#fff;padding:8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.12);font:14px system-ui">
-  <div><b>Becslés a táv adatai alapján</b></div>
-  <div style="margin-top:6px">
-    Távolság (m): <input id="dist" type="number" value="50" style="width:80px">
-    Irány (° az É-tól, óramutató szerint): <input id="bearing" type="number" value="0" style="width:80px">
-    <button id="plot">Rajzol</button>
-  </div>
-  <div style="margin-top:6px">
-    <button id="useHeading">Használja a teló iránytűjét</button>
-    <span id="headingInfo" style="color:#666"></span>
-  </div>
-</div>
+  <section class="card">
+    <div class="section-head">
+      <h2>Sektor ranglisták</h2>
+      <div class="row"><span class="muted">Rendezés: Összsúly (kg) ↓, holtversenynél: Legnagyobb ↓, majd darab ↓</span></div>
+    </div>
+    <div class="grid-3">
+      <div>
+        <h3>I. Szektor</h3>
+        <div class="table-wrap"><table id="sector_I" class="table"></table></div>
+      </div>
+      <div>
+        <h3>II. Szektor</h3>
+        <div class="table-wrap"><table id="sector_II" class="table"></table></div>
+      </div>
+      <div>
+        <h3>III. Szektor</h3>
+        <div class="table-wrap"><table id="sector_III" class="table"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <h2>Összesített ranglista</h2>
+    </div>
+    <div class="table-wrap">
+      <table id="overall" class="table"></table>
+    </div>
+  </section>
+</main>
+
+<footer class="container muted small">
+  <p>Offline működés (localStorage). Export: CSV. Nyomtatás: böngésző Print → PDF.</p>
+</footer>
+
 <script>
-  // segédfüggvény: földgömb előre-lépés (Vincenty helyett egyszerű Haversine-approx)
-  function destPoint(lat, lon, bearingDeg, distM){
-    const R=6371000;
-    const br = bearingDeg*Math.PI/180;
-    const la1 = lat*Math.PI/180, lo1 = lon*Math.PI/180;
-    const ad = distM/R;
-    const la2 = Math.asin(Math.sin(la1)*Math.cos(ad) + Math.cos(la1)*Math.sin(ad)*Math.cos(br));
-    const lo2 = lo1 + Math.atan2(Math.sin(br)*Math.sin(ad)*Math.cos(la1), Math.cos(ad)-Math.sin(la1)*Math.sin(la2));
-    return [la2*180/Math.PI, ((lo2*180/Math.PI+540)%360)-180];
-  }
-
-  let myPos = null; // telefon helye
-  let boatMarker = null;
-
-  // saját poz frissítésedből állítsd be myPos-t:
-  // (ez már benne van a kódodban – csak egészítsd ki:)
-  const _oldUpdate = update;
-  update = function(lat, lon, acc){
-    myPos = [lat, lon];
-    _oldUpdate(lat, lon, acc);
-  }
-
-  document.getElementById('plot').onclick = ()=>{
-    if(!myPos){ alert('Még nincs saját GPS pozíció.'); return; }
-    const d = parseFloat(document.getElementById('dist').value||'0');
-    const b = parseFloat(document.getElementById('bearing').value||'0');
-    const [blat, blon] = destPoint(myPos[0], myPos[1], b, d);
-    if(!boatMarker) boatMarker = L.marker([blat, blon], {title:'Becsült hajó'}).addTo(map);
-    else boatMarker.setLatLng([blat, blon]);
-    // húzz vonalat is
-    L.polyline([myPos, [blat, blon]], {color:'red'}).addTo(map);
-  };
-
-  // opcionális: iPhone iránytű (felhasználói gesztus kell iOS-en)
-  document.getElementById('useHeading').onclick = async ()=>{
-    try{
-      if (typeof DeviceOrientationEvent !== 'undefined' &&
-          typeof DeviceOrientationEvent.requestPermission === 'function'){
-        const perm = await DeviceOrientationEvent.requestPermission();
-        if (perm !== 'granted') { alert('Iránytű engedély megtagadva.'); return; }
-      }
-      window.addEventListener('deviceorientation', (e)=>{
-        // alpha ~ az északihoz viszonyított fok (nem minden telón pontos)
-        const a = e.alpha;
-        if (a != null){
-          document.getElementById('headingInfo').textContent = `Irány: ${a.toFixed(0)}°`;
-          document.getElementById('bearing').value = a.toFixed(0);
-        }
-      }, { once:false });
-    }catch(err){ alert('Iránytű nem engedélyezett: '+err); }
-  };
+  window.__BOROSTYAN_DEFAULT_TEAMS__ = [
+"Barista KFT Carp Team","Botfa Carp Team","Ragadozok","MGM Carp Team","Szelhajto küszök Team","Aranyhorog Carp Team","Pete Carp Team","HA-KI Carp Team","GSB LetsGo","Ghost Carp Hunter","Sprint Tüzep Carp Team","PD Carp Fising Hunter Team","Sörpocak Carp Team","Big White Carp Team","Fanatic Carp Team","Iron Carp Team","Steeal Carp","Lets Go Carp 1","Zenit Carp Team","PE-TI Carp Team","Perfect Baits Team","LetsGo Carp 2 Team","Wolfs Carp Team","Maestro CT-MTC Baits","HAPPY Carp Fish Team"
+  ];
 </script>
+<script src="scrip
