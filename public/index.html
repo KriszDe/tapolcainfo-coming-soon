@@ -1,4 +1,45 @@
-<!-- a te meglévő UI-d fetch-ezze az /api/metrics és /api/restart végpontokat a Vercelről -->
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Status + Restart</title>
+  <style>
+    body { font-family: system-ui; margin: 40px auto; max-width: 520px; padding: 0 16px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .row { display:flex; align-items:center; gap:12px; }
+    .dot { width:12px; height:12px; border-radius:50%; background:#999; }
+    .ok { background:#10b981; }
+    .bad { background:#ef4444; }
+    button { padding:10px 14px; border:1px solid #ddd; border-radius:10px; cursor:pointer; }
+    .muted { opacity:.7; font-size:.9em; }
+    #msg { margin-top:10px; }
+  </style>
+</head>
+<body>
+  <h1>Tapolca – szerver</h1>
+
+  <div class="card">
+    <div class="row">
+      <div id="dot" class="dot"></div>
+      <div><strong>Elérhetőség:</strong> <span id="status">ismeretlen…</span></div>
+    </div>
+    <div class="muted" id="updated">Utoljára frissítve: –</div>
+    <div style="margin-top:10px">
+      <button id="check">Frissítés</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <strong>Újraindítás</strong>
+    <div class="muted">A gomb azonnali újraindítást kér a szervertől.</div>
+    <div style="margin-top:10px">
+      <button id="reboot">Újraindítás</button>
+      <div id="msg" class="muted"></div>
+    </div>
+  </div>
+
+  <!-- a te meglévő UI-d fetch-ezze az /api/metrics és /api/restart végpontokat a Vercelről -->
 <script>
  async function check(){
    try {
@@ -14,3 +55,6 @@
    console.log(j);
  }
 </script>
+
+</body>
+</html>
