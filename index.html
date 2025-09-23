@@ -31,3 +31,70 @@
   </script>
 </body>
 </html>
+
+<!-- UI a távolság+irány alapú becsléshez -->
+<div style="position:absolute;left:8px;top:8px;background:#fff;padding:8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.12);font:14px system-ui">
+  <div><b>Becslés a táv adatai alapján</b></div>
+  <div style="margin-top:6px">
+    Távolság (m): <input id="dist" type="number" value="50" style="width:80px">
+    Irány (° az É-tól, óramutató szerint): <input id="bearing" type="number" value="0" style="width:80px">
+    <button id="plot">Rajzol</button>
+  </div>
+  <div style="margin-top:6px">
+    <button id="useHeading">Használja a teló iránytűjét</button>
+    <span id="headingInfo" style="color:#666"></span>
+  </div>
+</div>
+<script>
+  // segédfüggvény: földgömb előre-lépés (Vincenty helyett egyszerű Haversine-approx)
+  function destPoint(lat, lon, bearingDeg, distM){
+    const R=6371000;
+    const br = bearingDeg*Math.PI/180;
+    const la1 = lat*Math.PI/180, lo1 = lon*Math.PI/180;
+    const ad = distM/R;
+    const la2 = Math.asin(Math.sin(la1)*Math.cos(ad) + Math.cos(la1)*Math.sin(ad)*Math.cos(br));
+    const lo2 = lo1 + Math.atan2(Math.sin(br)*Math.sin(ad)*Math.cos(la1), Math.cos(ad)-Math.sin(la1)*Math.sin(la2));
+    return [la2*180/Math.PI, ((lo2*180/Math.PI+540)%360)-180];
+  }
+
+  let myPos = null; // telefon helye
+  let boatMarker = null;
+
+  // saját poz frissítésedből állítsd be myPos-t:
+  // (ez már benne van a kódodban – csak egészítsd ki:)
+  const _oldUpdate = update;
+  update = function(lat, lon, acc){
+    myPos = [lat, lon];
+    _oldUpdate(lat, lon, acc);
+  }
+
+  document.getElementById('plot').onclick = ()=>{
+    if(!myPos){ alert('Még nincs saját GPS pozíció.'); return; }
+    const d = parseFloat(document.getElementById('dist').value||'0');
+    const b = parseFloat(document.getElementById('bearing').value||'0');
+    const [blat, blon] = destPoint(myPos[0], myPos[1], b, d);
+    if(!boatMarker) boatMarker = L.marker([blat, blon], {title:'Becsült hajó'}).addTo(map);
+    else boatMarker.setLatLng([blat, blon]);
+    // húzz vonalat is
+    L.polyline([myPos, [blat, blon]], {color:'red'}).addTo(map);
+  };
+
+  // opcionális: iPhone iránytű (felhasználói gesztus kell iOS-en)
+  document.getElementById('useHeading').onclick = async ()=>{
+    try{
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function'){
+        const perm = await DeviceOrientationEvent.requestPermission();
+        if (perm !== 'granted') { alert('Iránytű engedély megtagadva.'); return; }
+      }
+      window.addEventListener('deviceorientation', (e)=>{
+        // alpha ~ az északihoz viszonyított fok (nem minden telón pontos)
+        const a = e.alpha;
+        if (a != null){
+          document.getElementById('headingInfo').textContent = `Irány: ${a.toFixed(0)}°`;
+          document.getElementById('bearing').value = a.toFixed(0);
+        }
+      }, { once:false });
+    }catch(err){ alert('Iránytű nem engedélyezett: '+err); }
+  };
+</script>
