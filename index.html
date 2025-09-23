@@ -1,108 +1,38 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="hu">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Borostyán-tó – Ranglista & Sektorok</title>
-  <link rel="stylesheet" href="/style.css?v=20250923-1">
-<script src="/script.js?v=20250923-1"></script>
+  <meta charset="UTF-8">
+  <title>Admin • Statisztika</title>
+  <style>
+    body { font-family: system-ui; background: #f6f6f6; margin: 0; padding: 20px; }
+    h1 { text-align: center; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 16px; max-width: 900px; margin: 0 auto; }
+    .card { background: #fff; padding: 16px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+    .label { font-weight: bold; margin-bottom: 6px; }
+    .value { font-size: 1.2em; }
+  </style>
 </head>
 <body>
-<header class="container">
-  <h1>VIII. Borostyán-tavi Bojlis Találkozó – Ranglista</h1>
-  <p class="muted">Gyors felvitel • Sektoronkénti és összesített eredmények • Nyomtatás/Export</p>
-</header>
+  <h1>Szerver statisztika</h1>
+  <div class="grid" id="cards"></div>
 
-<main class="container">
-  <section class="card">
-    <div class="section-head">
-      <h2>Csapatok & Helyek</h2>
-      <div class="row">
-        <button id="btnReset" class="btn btn-danger">Minden törlése</button>
-        <button id="btnExport" class="btn btn-ghost">Export CSV</button>
-        <button id="btnPrint" class="btn">Nyomtatás / PDF</button>
-      </div>
-    </div>
-    <div class="table-wrap">
-      <table id="teamsTable" class="table"></table>
-    </div>
-  </section>
-
-  <section class="card">
-    <div class="section-head">
-      <h2>Fogások / Összegzés bevitel</h2>
-      <div class="row">
-        <label>Szektor
-          <select id="sectorSelect">
-            <option value="I">I</option>
-            <option value="II">II</option>
-            <option value="III">III</option>
-          </select>
-        </label>
-      </div>
-    </div>
-    <form id="entryForm" class="grid">
-      <label>Horgászhely #
-        <input id="peg" type="number" min="1" max="99" required/>
-      </label>
-      <label>Csapat
-        <input id="team" list="teamList" placeholder="Kezdj el gépelni…" required/>
-        <datalist id="teamList"></datalist>
-      </label>
-      <label>Fogott halak száma (db)
-        <input id="count" type="number" min="0" step="1" value="0"/>
-      </label>
-      <label>Fogott halak összsúlya (kg)
-        <input id="totalKg" type="number" min="0" step="0.001" value="0"/>
-      </label>
-      <label>Legnagyobb hal (kg)
-        <input id="biggestKg" type="number" min="0" step="0.001" value="0"/>
-      </label>
-      <label>Öt legnagyobb hal összsúlya (kg) – opció
-        <input id="top5Kg" type="number" min="0" step="0.001" value="0"/>
-      </label>
-      <button class="btn" type="submit">Mentés / Frissítés</button>
-    </form>
-  </section>
-
-  <section class="card">
-    <div class="section-head">
-      <h2>Sektor ranglisták</h2>
-      <div class="row"><span class="muted">Rendezés: Összsúly (kg) ↓, holtversenynél: Legnagyobb ↓, majd darab ↓</span></div>
-    </div>
-    <div class="grid-3">
-      <div>
-        <h3>I. Szektor</h3>
-        <div class="table-wrap"><table id="sector_I" class="table"></table></div>
-      </div>
-      <div>
-        <h3>II. Szektor</h3>
-        <div class="table-wrap"><table id="sector_II" class="table"></table></div>
-      </div>
-      <div>
-        <h3>III. Szektor</h3>
-        <div class="table-wrap"><table id="sector_III" class="table"></table></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="card">
-    <div class="section-head">
-      <h2>Összesített ranglista</h2>
-    </div>
-    <div class="table-wrap">
-      <table id="overall" class="table"></table>
-    </div>
-  </section>
-</main>
-
-<footer class="container muted small">
-  <p>Offline működés (localStorage). Export: CSV. Nyomtatás: böngésző Print → PDF.</p>
-</footer>
-
-<script>
-  window.__BOROSTYAN_DEFAULT_TEAMS__ = [
-"Barista KFT Carp Team","Botfa Carp Team","Ragadozok","MGM Carp Team","Szelhajto küszök Team","Aranyhorog Carp Team","Pete Carp Team","HA-KI Carp Team","GSB LetsGo","Ghost Carp Hunter","Sprint Tüzep Carp Team","PD Carp Fising Hunter Team","Sörpocak Carp Team","Big White Carp Team","Fanatic Carp Team","Iron Carp Team","Steeal Carp","Lets Go Carp 1","Zenit Carp Team","PE-TI Carp Team","Perfect Baits Team","LetsGo Carp 2 Team","Wolfs Carp Team","Maestro CT-MTC Baits","HAPPY Carp Fish Team"
-  ];
-</script>
-<script src="scrip
+  <script>
+    async function load(){
+      const r = await fetch('/metrics'); // a szervered adja ezt az endpointot
+      const d = await r.json();
+      const fmt = b => (b/1024/1024/1024).toFixed(1)+' GB';
+      const cards = [
+        ['Host', d.hostname],
+        ['Uptime', (d.uptimeSeconds/3600).toFixed(1)+' h'],
+        ['CPU load', d.cpuLoad['1m']+' / '+d.cpuLoad['5m']+' / '+d.cpuLoad['15m']],
+        ['Memória', fmt(d.memory.used)+' / '+fmt(d.memory.total)],
+        ['Lemez', d.disk.usedPct]
+      ];
+      document.getElementById('cards').innerHTML = cards.map(([h,v]) =>
+        `<div class="card"><div class="label">${h}</div><div class="value">${v}</div></div>`
+      ).join('');
+    }
+    load(); setInterval(load, 5000);
+  </script>
+</body>
+</html>
