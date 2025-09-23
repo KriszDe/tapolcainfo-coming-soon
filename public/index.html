@@ -1,85 +1,16 @@
-<!doctype html>
-<html lang="hu">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Status + Restart</title>
-  <style>
-    body { font-family: system-ui; margin: 40px auto; max-width: 520px; padding: 0 16px; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-    .row { display:flex; align-items:center; gap:12px; }
-    .dot { width:12px; height:12px; border-radius:50%; background:#999; }
-    .ok { background:#10b981; }
-    .bad { background:#ef4444; }
-    button { padding:10px 14px; border:1px solid #ddd; border-radius:10px; cursor:pointer; }
-    .muted { opacity:.7; font-size:.9em; }
-    #msg { margin-top:10px; }
-  </style>
-</head>
-<body>
-  <h1>Tapolca – szerver</h1>
+<!-- a te meglévő UI-d fetch-ezze az /api/metrics és /api/restart végpontokat a Vercelről -->
+<script>
+ async function check(){
+   try {
+     const r = await fetch('/api/metrics'); // Vercel proxyn átmegy az otthoni géphez
+     const d = await r.json();
+     console.log(d);
+   } catch(e) { console.error(e); }
+ }
 
-  <div class="card">
-    <div class="row">
-      <div id="dot" class="dot"></div>
-      <div><strong>Elérhetőség:</strong> <span id="status">ismeretlen…</span></div>
-    </div>
-    <div class="muted" id="updated">Utoljára frissítve: –</div>
-    <div style="margin-top:10px">
-      <button id="check">Frissítés</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <strong>Újraindítás</strong>
-    <div class="muted">A gomb azonnali újraindítást kér a szervertől.</div>
-    <div style="margin-top:10px">
-      <button id="reboot">Újraindítás</button>
-      <div id="msg" class="muted"></div>
-    </div>
-  </div>
-
-  <script>
-    const dot = document.getElementById('dot');
-    const statusEl = document.getElementById('status');
-    const updated = document.getElementById('updated');
-    const msg = document.getElementById('msg');
-
-    async function check(){
-      msg.textContent = '';
-      statusEl.textContent = 'ellenőrzés…';
-      dot.className = 'dot';
-      try{
-        const r = await fetch('/api/health', { cache: 'no-store' });
-        const d = await r.json();
-        const ok = d && d.ok === true;
-        statusEl.textContent = ok ? 'ELÉRHETŐ' : 'NEM ELÉRHETŐ';
-        dot.className = 'dot ' + (ok ? 'ok' : 'bad');
-        updated.textContent = 'Utoljára frissítve: ' + new Date().toLocaleTimeString();
-      }catch(e){
-        statusEl.textContent = 'HIBA';
-        dot.className = 'dot bad';
-      }
-    }
-
-    async function reboot(){
-      msg.textContent = 'Kérés elküldése…';
-      try{
-        const r = await fetch('/api/restart', { method: 'POST' });
-        const d = await r.json();
-        if(r.ok && d.ok){
-          msg.textContent = 'Újraindítás elindítva.';
-        } else {
-          msg.textContent = 'Hiba: ' + (d.error || r.status);
-        }
-      }catch(e){
-        msg.textContent = 'Hiba: ' + e.message;
-      }
-    }
-
-    document.getElementById('check').addEventListener('click', check);
-    document.getElementById('reboot').addEventListener('click', reboot);
-    check();
-  </script>
-</body>
-</html>
+ async function reboot(){
+   const r = await fetch('/api/restart', { method:'POST' });
+   const j = await r.json();
+   console.log(j);
+ }
+</script>

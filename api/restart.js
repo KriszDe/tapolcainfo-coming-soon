@@ -1,23 +1,20 @@
 module.exports = async (req, res) => {
-  if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method_not_allowed' });
+  if (req.method !== 'POST') return res.status(405).json({ ok:false, error:'method_not_allowed' });
   try {
-    const origin = process.env.ORIGIN;     // pl. http://79.122.55.187
-    const user = process.env.BASIC_USER;   // Dell
-    const pass = process.env.BASIC_PASS;   // Kovacs
-    const token = process.env.RESTART_TOKEN; // UGYANAZ mint a szerveren!
-
-    const auth = 'Basic ' + Buffer.from(`${user}:${pass}`).toString('base64');
+    const origin = process.env.ORIGIN;
+    const token = process.env.RESTART_TOKEN;
+    if (!origin || !token) return res.status(500).json({ error: 'CONFIG_MISSING' });
 
     const r = await fetch(`${origin}/restart?token=${encodeURIComponent(token)}`, {
       method: 'POST',
-      headers: { Authorization: auth, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token })
     });
-
-    const data = await r.json();
-    res.setHeader('Cache-Control', 'no-store');
-    res.status(r.ok ? 200 : r.status).json(data);
+    const text = await r.text();
+    const body = text ? JSON.parse(text) : {};
+    res.setHeader('Cache-Control','no-store');
+    res.status(r.ok ? 200 : r.status).json(body);
   } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
+    res.status(500).json({ error: e.message });
   }
 };
